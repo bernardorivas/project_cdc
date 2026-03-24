@@ -80,13 +80,19 @@ def main():
     if args.subdiv_limit is not None:
         params['subdiv_limit'] = args.subdiv_limit
 
+    # Build a run tag from key parameters to avoid overwriting
+    run_tag = (f"subdiv{params['subdiv_min']}-{params['subdiv_max']}"
+               f"_tau{params['tau']}_{args.box_mode}")
+    if args.conley:
+        run_tag += "_conley"
+    if args.test:
+        run_tag = "test"
+
     # Output directory
     if args.output_dir:
         out_dir = args.output_dir
-    elif args.test:
-        out_dir = os.path.join(_CODE_DIR, 'results', 'morse_graphs', name + '_test')
     else:
-        out_dir = os.path.join(_CODE_DIR, 'results', 'morse_graphs', name)
+        out_dir = os.path.join(_CODE_DIR, 'results', 'morse_graphs', name, run_tag)
     os.makedirs(out_dir, exist_ok=True)
 
     print(f"[{name}] {dim}D system ({N} nodes x 2D)")
