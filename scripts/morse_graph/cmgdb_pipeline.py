@@ -18,7 +18,7 @@ if _CMGDB_SRC not in sys.path:
 
 import CMGDB
 
-from .dynamics import simulate_switched_network
+from .dynamics import simulate_switched_network, rk4_final_state
 
 
 def estimate_domain_bounds(f_list, X0, T, dt, eps, gamma, padding_factor=0.25):
@@ -34,20 +34,21 @@ def estimate_domain_bounds(f_list, X0, T, dt, eps, gamma, padding_factor=0.25):
 
 
 def make_tau_map(f_list, eps, gamma, tau, dt):
-    """Build time-tau point map using the RK4 network simulator."""
+    """Build time-tau point map using the lightweight RK4 stepper."""
     N = len(f_list)
 
     def f(x):
         X0 = np.array(x).reshape(N, 2)
-        _, X, _ = simulate_switched_network(f_list, X0, T=tau, dt=dt, eps=eps, gamma=gamma)
-        return X[-1].flatten().tolist()
+        Xf = rk4_final_state(f_list, X0, T=tau, dt=dt, eps=eps, gamma=gamma)
+        return Xf.flatten().tolist()
 
     return f
 
 
 def estimate_computation_time(f_list, eps, gamma, lower_bounds, upper_bounds,
                               tau, dt, subdiv_min, subdiv_max, subdiv_init,
-                              subdiv_limit, padding=False, n_samples=5):
+                              subdiv_limit, padding=False,
+                              box_mode='center', num_pts=10, n_samples=5):
     """Estimate CMGDB computation time by benchmarking individual BoxMap calls.
 
     Returns a dict with timing estimates and per-box cost breakdown.
@@ -59,35 +60,46 @@ def estimate_computation_time(f_list, eps, gamma, lower_bounds, upper_bounds,
     # Build a sample rectangle (the full domain)
     sample_rect = list(lower_bounds) + list(upper_bounds)
 
-    # Time n_samples BoxMap evaluations
+    # Time n_samples BoxMap evaluations with the chosen mode
     times = []
     for _ in range(n_samples):
         t0 = time.time()
-        CMGDB.BoxMap(tau_map, sample_rect, padding=padding)
+        CMGDB.BoxMap(tau_map, sample_rect, mode=box_mode, padding=padding, num_pts=num_pts)
         times.append(time.time() - t0)
 
     t_box = np.median(times)
-    corners_per_box = 2 ** dim
+    if box_mode == 'corners':
+        evals_per_box = 2 ** dim
+    elif box_mode == 'center':
+        evals_per_box = 1
+    else:
+        evals_per_box = num_pts
 
-    # Estimate box counts at various subdivision levels
-    # At level k, the total grid has 2^k boxes. Adaptive refinement
-    # only evaluates a fraction, but in the worst case all are visited.
+    # Estimate box counts at various subdivision levels.
+    # At level k, the total grid has 2^k boxes.
+    # CMGDB uniformly refines ALL boxes from subdiv_init to subdiv_min,
+    # then adaptively refines only SCCs from subdiv_min to subdiv_max.
     boxes_init = 2 ** subdiv_init
     boxes_min = 2 ** subdiv_min
     boxes_max = 2 ** subdiv_max
 
-    # Practical estimate: the number of boxes actually evaluated is
-    # bounded by subdiv_limit * num_SCCs (typically small) plus the
-    # coarse grid traversal. Use subdiv_limit as a rough proxy for
-    # the number of boxes evaluated at the finest level.
-    est_boxes_evaluated = min(boxes_min, subdiv_limit * 10)
+    # Uniform phase: every box from init to min is evaluated.
+    # Total = sum(2^k for k in range(subdiv_init, subdiv_min)) = 2^subdiv_min - 2^subdiv_init
+    uniform_boxes = boxes_min - boxes_init
+
+    # Adaptive phase: hard to predict, but bounded by subdiv_limit * num_SCCs
+    # per refinement level, over (subdiv_max - subdiv_min) levels.
+    adaptive_levels = subdiv_max - subdiv_min
+    est_adaptive_boxes = subdiv_limit * adaptive_levels  # rough upper bound
+
+    est_boxes_evaluated = uniform_boxes + est_adaptive_boxes
 
     print(f"\n  === Time estimate ===")
     print(f"  Dimension: {dim}D ({N} nodes x 2D)")
-    print(f"  Corners per box: {corners_per_box}")
+    print(f"  BoxMap mode: {box_mode} ({evals_per_box} tau-map evals/box)")
     print(f"  RK4 steps per tau-map: {int(round(tau / dt))}")
     print(f"  Median time per BoxMap call: {t_box:.4f}s")
-    print(f"  Median time per tau-map eval: {t_box / corners_per_box:.6f}s")
+    print(f"  Median time per tau-map eval: {t_box / evals_per_box:.6f}s")
     print(f"  Grid boxes at subdiv_init={subdiv_init}: {boxes_init:,}")
     print(f"  Grid boxes at subdiv_min={subdiv_min}: {boxes_min:,}")
     print(f"  Grid boxes at subdiv_max={subdiv_max}: {boxes_max:,}")
@@ -99,7 +111,8 @@ def estimate_computation_time(f_list, eps, gamma, lower_bounds, upper_bounds,
 
     return {
         'dim': dim,
-        'corners_per_box': corners_per_box,
+        'evals_per_box': evals_per_box,
+        'box_mode': box_mode,
         'median_time_per_box': t_box,
         'boxes_at_init': boxes_init,
         'boxes_at_min': boxes_min,
@@ -111,12 +124,18 @@ def estimate_computation_time(f_list, eps, gamma, lower_bounds, upper_bounds,
 
 def compute_morse_graph(f_list, eps, gamma, lower_bounds, upper_bounds,
                         tau, dt, subdiv_min, subdiv_max, subdiv_init=0,
-                        subdiv_limit=5000, padding=False):
-    """Full CMGDB Morse graph computation. Returns (morse_graph, map_graph, elapsed_seconds)."""
+                        subdiv_limit=5000, padding=False,
+                        box_mode='center', num_pts=10):
+    """Full CMGDB Morse graph computation. Returns (morse_graph, map_graph, elapsed_seconds).
+
+    box_mode: 'corners' (2^d evals/box), 'center' (1 eval, forces padding),
+              'random' (num_pts evals/box).
+    For high-dimensional systems, 'center' or 'random' is strongly recommended.
+    """
     tau_map = make_tau_map(f_list, eps, gamma, tau, dt)
 
     def F(rect):
-        return CMGDB.BoxMap(tau_map, rect, padding=padding)
+        return CMGDB.BoxMap(tau_map, rect, mode=box_mode, padding=padding, num_pts=num_pts)
 
     model = CMGDB.Model(subdiv_min, subdiv_max, subdiv_init, subdiv_limit,
                          lower_bounds, upper_bounds, F)

@@ -9,11 +9,13 @@ from .dynamics import (stuart_landau, radial_poly, subcritical_hopf,
 
 
 # Default CMGDB parameters keyed by total state dimension (2*N).
-# Subdivision is total (not per-dimension). To get ~k splits per dimension
-# in d dimensions, set subdiv = k*d.
+# Subdivision is total (not per-dimension). subdiv_min is the level at which
+# CMGDB starts SCC analysis; everything below is uniformly refined.
+# subdiv_max is the deepest adaptive refinement allowed.
+# Keep subdiv_min moderate to avoid blind uniform refinement.
 CMGDB_PARAMS = {
-    6: dict(subdiv_min=24, subdiv_max=36, subdiv_init=12, subdiv_limit=10000, tau=0.5),
-    8: dict(subdiv_min=32, subdiv_max=48, subdiv_init=16, subdiv_limit=10000, tau=0.5),
+    6: dict(subdiv_min=12, subdiv_max=24, subdiv_init=6, subdiv_limit=10000, tau=0.5),
+    8: dict(subdiv_min=12, subdiv_max=24, subdiv_init=6, subdiv_limit=10000, tau=0.5),
 }
 
 

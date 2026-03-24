@@ -117,6 +117,33 @@ def diffusive_coupling(X, A, gamma):
     return out
 
 
+def rk4_final_state(f_list, X0, T, dt, eps, gamma):
+    """Lightweight RK4 integrator that only returns the final state.
+
+    No trajectory or adjacency history is stored -- just steps forward in-place.
+    Designed for repeated tau-map evaluations inside CMGDB.BoxMap.
+    """
+    s = np.array(X0, dtype=float)
+    steps = int(round(T / dt))
+
+    def F(state):
+        A = adjacency_from_state(state, eps)
+        val = np.zeros_like(state, dtype=float)
+        for i, f in enumerate(f_list):
+            val[i] = f(state[i])
+        val += diffusive_coupling(state, A, gamma)
+        return val
+
+    for _ in range(steps):
+        k1 = F(s)
+        k2 = F(s + 0.5 * dt * k1)
+        k3 = F(s + 0.5 * dt * k2)
+        k4 = F(s + dt * k3)
+        s = s + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+    return s
+
+
 def simulate_switched_network(f_list, X0, T=60.0, dt=0.02, eps=1.2, gamma=0.15):
     X0 = np.array(X0, dtype=float)
     N, d = X0.shape

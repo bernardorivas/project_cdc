@@ -31,6 +31,8 @@ def parse_args():
                         help='Example number (1-9)')
     parser.add_argument('--estimate', action='store_true',
                         help='Only estimate computation time (no Morse graph)')
+    parser.add_argument('--test', action='store_true',
+                        help='Quick test run with minimal subdivision (verifies full pipeline)')
     parser.add_argument('--tau', type=float, default=None,
                         help='Integration time for tau-map (default: dim-dependent)')
     parser.add_argument('--subdiv-min', type=int, default=None,
@@ -41,6 +43,12 @@ def parse_args():
                         help='Max boxes per SCC (default: dim-dependent)')
     parser.add_argument('--padding', action='store_true',
                         help='Use BoxMap padding (coarser but safer outer approximation)')
+    parser.add_argument('--box-mode', type=str, default='center',
+                        choices=['corners', 'center', 'random'],
+                        help='BoxMap eval mode (default: center). corners=2^d evals/box, '
+                             'center=1 eval (forces padding), random=num_pts evals')
+    parser.add_argument('--num-pts', type=int, default=10,
+                        help='Number of sample points for random mode (default: 10)')
     parser.add_argument('--output-dir', type=str, default=None,
                         help='Custom output directory')
     return parser.parse_args()
@@ -57,6 +65,10 @@ def main():
 
     # Resolve CMGDB parameters with CLI overrides
     params = dict(CMGDB_PARAMS[dim])
+    if args.test:
+        # Minimal subdivision for quick pipeline verification
+        params.update(subdiv_min=dim, subdiv_max=2 * dim, subdiv_init=0, subdiv_limit=500)
+        print(f"[{name}] *** TEST MODE: minimal subdivision ***")
     if args.tau is not None:
         params['tau'] = args.tau
     if args.subdiv_min is not None:
@@ -69,13 +81,16 @@ def main():
     # Output directory
     if args.output_dir:
         out_dir = args.output_dir
+    elif args.test:
+        out_dir = os.path.join(_CODE_DIR, 'results', 'morse_graphs', name + '_test')
     else:
         out_dir = os.path.join(_CODE_DIR, 'results', 'morse_graphs', name)
     os.makedirs(out_dir, exist_ok=True)
 
     print(f"[{name}] {dim}D system ({N} nodes x 2D)")
     print(f"  tau={params['tau']}, subdiv={params['subdiv_min']}-{params['subdiv_max']}, "
-          f"init={params['subdiv_init']}, limit={params['subdiv_limit']}, padding={args.padding}")
+          f"init={params['subdiv_init']}, limit={params['subdiv_limit']}, "
+          f"padding={args.padding}, box_mode={args.box_mode}")
 
     try:
         # Step 1: Estimate domain bounds
@@ -92,7 +107,7 @@ def main():
                 tau=params['tau'], dt=ex['dt'],
                 subdiv_min=params['subdiv_min'], subdiv_max=params['subdiv_max'],
                 subdiv_init=params['subdiv_init'], subdiv_limit=params['subdiv_limit'],
-                padding=args.padding)
+                padding=args.padding, box_mode=args.box_mode, num_pts=args.num_pts)
             return
 
         # Step 3: Compute Morse graph
@@ -102,7 +117,7 @@ def main():
             tau=params['tau'], dt=ex['dt'],
             subdiv_min=params['subdiv_min'], subdiv_max=params['subdiv_max'],
             subdiv_init=params['subdiv_init'], subdiv_limit=params['subdiv_limit'],
-            padding=args.padding)
+            padding=args.padding, box_mode=args.box_mode, num_pts=args.num_pts)
 
         print(f"[{name}] Done: {mg.num_vertices()} Morse sets, "
               f"{map_g.num_vertices()} phase space boxes, {elapsed:.1f}s")
