@@ -49,6 +49,8 @@ def parse_args():
                              'center=1 eval (forces padding), random=num_pts evals')
     parser.add_argument('--num-pts', type=int, default=10,
                         help='Number of sample points for random mode (default: 10)')
+    parser.add_argument('--conley', action='store_true',
+                        help='Compute Conley-Morse graph (with Conley indices, requires CHomP)')
     parser.add_argument('--output-dir', type=str, default=None,
                         help='Custom output directory')
     return parser.parse_args()
@@ -117,7 +119,8 @@ def main():
             tau=params['tau'], dt=ex['dt'],
             subdiv_min=params['subdiv_min'], subdiv_max=params['subdiv_max'],
             subdiv_init=params['subdiv_init'], subdiv_limit=params['subdiv_limit'],
-            padding=args.padding, box_mode=args.box_mode, num_pts=args.num_pts)
+            padding=args.padding, box_mode=args.box_mode, num_pts=args.num_pts,
+            conley=args.conley)
 
         print(f"[{name}] Done: {mg.num_vertices()} Morse sets, "
               f"{map_g.num_vertices()} phase space boxes, {elapsed:.1f}s")

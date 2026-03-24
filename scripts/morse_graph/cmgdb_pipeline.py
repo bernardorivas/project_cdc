@@ -125,11 +125,12 @@ def estimate_computation_time(f_list, eps, gamma, lower_bounds, upper_bounds,
 def compute_morse_graph(f_list, eps, gamma, lower_bounds, upper_bounds,
                         tau, dt, subdiv_min, subdiv_max, subdiv_init=0,
                         subdiv_limit=5000, padding=False,
-                        box_mode='center', num_pts=10):
+                        box_mode='center', num_pts=10, conley=False):
     """Full CMGDB Morse graph computation. Returns (morse_graph, map_graph, elapsed_seconds).
 
     box_mode: 'corners' (2^d evals/box), 'center' (1 eval, forces padding),
               'random' (num_pts evals/box).
+    conley: if True, compute Conley-Morse graph (with Conley indices). Requires CHomP.
     For high-dimensional systems, 'center' or 'random' is strongly recommended.
     """
     tau_map = make_tau_map(f_list, eps, gamma, tau, dt)
@@ -141,7 +142,10 @@ def compute_morse_graph(f_list, eps, gamma, lower_bounds, upper_bounds,
                          lower_bounds, upper_bounds, F)
 
     t0 = time.time()
-    mg, map_g = CMGDB.ComputeMorseGraph(model)
+    if conley:
+        mg, map_g = CMGDB.ComputeConleyMorseGraph(model)
+    else:
+        mg, map_g = CMGDB.ComputeMorseGraph(model)
     elapsed = time.time() - t0
     return mg, map_g, elapsed
 
