@@ -1,0 +1,6 @@
+[submodule "MorseGraph"]
+	path = MorseGraph
+	url = https://github.com/bernardorivas/MorseGraph.git
+[submodule "MorseGraph-L4DC"]
+	path = MorseGraph-L4DC
+	url = https://github.com/bernardorivas/MorseGraph-L4DC
