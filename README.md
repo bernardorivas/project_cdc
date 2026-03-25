@@ -1,4 +1,4 @@
-# Morse Graph Analysis for Autonomous Switching Networks
+# Morse Graph for (Autonomous-)Switching Networks
 
 Compute Morse graphs for coupled oscillator networks with **state-dependent switching** using [CMGDB](https://github.com/marciogameiro/CMGDB) (Computational Morse Graph Database). Each mode of the hybrid system corresponds to a different coupling graph topology. The Morse decomposition captures the global topological structure (attractors, repellers, connecting orbits) and is used for **topological validation** of learned system approximations.
 
