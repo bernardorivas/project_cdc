@@ -39,6 +39,8 @@ def parse_args():
                         help='Min subdivision level (default: dim-dependent)')
     parser.add_argument('--subdiv-max', type=int, default=None,
                         help='Max subdivision level (default: dim-dependent)')
+    parser.add_argument('--subdiv-init', type=int, default=None,
+                        help='Initial subdivision level (default: dim-dependent)')
     parser.add_argument('--subdiv-limit', type=int, default=None,
                         help='Max boxes per SCC (default: dim-dependent)')
     parser.add_argument('--padding', action='store_true',
@@ -77,6 +79,8 @@ def main():
         params['subdiv_min'] = args.subdiv_min
     if args.subdiv_max is not None:
         params['subdiv_max'] = args.subdiv_max
+    if args.subdiv_init is not None:
+        params['subdiv_init'] = args.subdiv_init
     if args.subdiv_limit is not None:
         params['subdiv_limit'] = args.subdiv_limit
 
