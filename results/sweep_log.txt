@@ -1,0 +1,51 @@
+=== CMGDB Parameter Sweep ===
+  Example: 1
+  Configs: 8 subdivision settings x 2 conley = 16 jobs
+  Workers: 4
+  Started: 2026-03-25 11:34:27
+
+  [1/16] subdiv(0,6,6)
+  [2/16] subdiv(0,6,6)_conley
+  [3/16] subdiv(0,6,12)
+  [4/16] subdiv(0,6,12)_conley
+  [5/16] subdiv(0,6,18)
+  [6/16] subdiv(0,12,18)
+  [7/16] subdiv(0,6,18)_conley
+  [8/16] subdiv(0,12,18)_conley
+  [9/16] subdiv(0,6,24)
+  [10/16] subdiv(0,12,24)
+  [11/16] subdiv(0,18,24)
+  [12/16] subdiv(0,6,24)_conley
+  [13/16] subdiv(0,12,24)_conley
+  [14/16] subdiv(0,18,24)_conley
+  [15/16] subdiv(0,18,32)
+  [16/16] subdiv(0,18,32)_conley
+
+[11:34:27] STARTED: subdiv(0,6,6)
+[11:34:27] STARTED: subdiv(0,6,6)_conley
+[11:34:27] STARTED: subdiv(0,6,12)
+[11:34:27] STARTED: subdiv(0,6,12)_conley
+[11:34:53] OK: subdiv(0,6,6) (25.9s)
+[11:34:53] STARTED: subdiv(0,6,18)
+[11:34:58] OK: subdiv(0,6,6)_conley (31.0s)
+[11:34:58] STARTED: subdiv(0,12,18)
+[11:52:37] OK: subdiv(0,6,12) (18.2min)
+[11:52:37] STARTED: subdiv(0,6,18)_conley
+[11:52:38] OK: subdiv(0,6,12)_conley (18.2min)
+[11:52:38] STARTED: subdiv(0,12,18)_conley
+[12:12:00] OK: subdiv(0,6,18) (37.1min)
+[12:12:00] STARTED: subdiv(0,6,24)
+[12:16:02] OK: subdiv(0,12,18) (41.1min)
+[12:16:02] STARTED: subdiv(0,12,24)
+[12:29:50] OK: subdiv(0,6,18)_conley (37.2min)
+[12:29:50] STARTED: subdiv(0,18,24)
+[12:37:55] OK: subdiv(0,12,18)_conley (45.3min)
+[12:37:55] STARTED: subdiv(0,6,24)_conley
+[12:49:28] OK: subdiv(0,6,24) (37.5min)
+[12:49:28] STARTED: subdiv(0,12,24)_conley
+[12:57:05] OK: subdiv(0,12,24) (41.1min)
+[12:57:05] STARTED: subdiv(0,18,24)_conley
+[13:15:04] OK: subdiv(0,6,24)_conley (37.2min)
+[13:15:04] STARTED: subdiv(0,18,32)
+[13:34:47] OK: subdiv(0,12,24)_conley (45.3min)
+[13:34:47] STARTED: subdiv(0,18,32)_conley

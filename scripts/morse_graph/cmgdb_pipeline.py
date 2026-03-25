@@ -1,7 +1,6 @@
 """CMGDB Morse graph computation pipeline for switched network systems."""
 
 import os
-import sys
 import json
 import time
 
@@ -9,13 +8,6 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-# Add CMGDB to path
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_CMGDB_SRC = os.path.join(_SCRIPT_DIR, '..', '..', 'MorseGraph', 'cmgdb', 'src')
-if _CMGDB_SRC not in sys.path:
-    sys.path.insert(0, _CMGDB_SRC)
-
 import CMGDB
 
 from .dynamics import simulate_switched_network, rk4_final_state

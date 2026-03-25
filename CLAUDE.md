@@ -4,20 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-This repository (`cdc_kaitomaani`) contains research on **hybrid dynamical system identification** combined with **computational topology (Morse graph analysis)**. The two main components are:
+This repository (`cdc_kaitomaani`) contains research on **hybrid dynamical system identification** combined with **computational topology (Morse graph analysis)**.
 
-1. **Jupyter notebooks** (root level) -- hybrid system identification pipelines that learn switched dynamical systems from data, then validate them topologically.
-2. **MorseGraph-L4DC** (subdir) -- a Python library for computing Morse graphs, Morse sets, and basins of attraction via combinatorial Conley-Morse theory on uniform grids.
+The two main components are:
+
+1. **`scripts/morse_graph/`** -- CMGDB-based Morse graph pipeline for 9 autonomous switched oscillator network examples (6D and 8D). Uses pip-installed CMGDB for adaptive subdivision and SCC-based Morse graph extraction.
+2. **`notebooks/`** -- Jupyter notebooks for hybrid system identification (learning switched dynamical systems from data) and topological validation.
 
 The scientific goal: given a switched dynamical system with multiple modes (each with its own graph topology, coupling parameters, and local dynamics), learn the mode bank and a discrete selector from trajectory data, then compare the **topological structure** (Morse decomposition) of the learned system against the ground truth.
-
-**`MorseGraph/`** contains the CMGDB library (C++ backend with Python bindings, adaptive subdivision). It is used in Section 11 of `morse_graph.ipynb` via `import CMGDB` for per-mode ODE-based Morse graphs (`CMGDB.BoxMap`, `CMGDB.BoxMapData`, `CMGDB.ComputeMorseGraph`, `CMGDB.PlotMorseGraph/PlotMorseSets`). **`MorseGraph-L4DC/`** is a lightweight Python-only reimplementation used in Sections 10 and earlier.
 
 ## Environment and setup
 
 - Python 3.14, venv at `.venv/`
-- Key dependencies: torch, numpy, scipy, matplotlib, networkx, joblib, scikit-learn
-- MorseGraph-L4DC is not pip-installed; notebooks add it to sys.path via `sys.path.insert(0, os.path.join(os.getcwd(), 'MorseGraph-L4DC'))`
+- Key dependencies: CMGDB (pip install), torch, numpy, scipy, matplotlib, networkx, joblib, scikit-learn
 - Run notebooks with the `.venv` kernel
 - No test suite or CI. Validation is done through the example scripts and notebooks.
 
@@ -40,49 +39,31 @@ Key model classes in notebooks:
 - `PhysicsInformedBank` / `ReducedStructureBank` -- mode banks
 - `GRUSelector` -- history-window encoder producing mode logits
 - `HybridSelectorModel` -- combines bank + selector
-- `SwitchingSystem` (from MorseGraph-L4DC) -- ground-truth state-dependent switching
 
-## Architecture: MorseGraph-L4DC library
+## Architecture: CMGDB Morse graph pipeline
 
-Located at `MorseGraph-L4DC/MorseGraphL4DC/`. Core pipeline:
+Located at `scripts/morse_graph/`. See `scripts/morse_graph/README.md` for full documentation.
 
-```
-UniformGrid  -->  Dynamics (F_*)  -->  Model.compute_box_map()  -->  compute_morse_graph()  -->  compute_all_morse_set_basins()
-```
+Core pipeline: simulate network to estimate domain bounds -> construct time-tau map -> build CMGDB.BoxMap (outer approximation) -> adaptive subdivision + SCC analysis -> Morse graph + optional Conley indices.
 
-**Core modules:**
-- `grids.py`: `UniformGrid(bounds=np.array([[lo],[hi]]), divisions=np.array([n]))`. Boxes are shape `(N, 2, D)`.
-- `dynamics.py`: Four outer-approximation strategies:
-  - `F_integration(ode_f, tau, epsilon)` -- ODE integration (ground truth). Auto-detects `SwitchingSystem` and creates event functions for switching surfaces.
-  - `F_data(X, Y, grid, ...)` -- data-driven with KD-tree neighborhoods.
-  - `F_Lipschitz(map_f, L_tau, box_diameter, epsilon)` -- Lipschitz-based rigorous bounds.
-  - `F_gaussianprocess(gp_model, confidence_level)` -- GP regression with Bonferroni-corrected confidence. **Not exported from `__init__.py`**; import directly from `dynamics.py`.
-- `systems.py`: `SwitchingSystem(polynomials, vector_fields)`. Mode index via binary encoding of polynomial sign patterns: `sigma(x) = sum((p_i(x) > 0) * 2^i)`. Expects exactly `2^k` vector fields for `k` polynomials. Callable as `__call__(t, x)` for scipy integration.
-- `analysis.py`: `full_morse_graph_analysis(grid, F)` returns `(box_map, morse_graph, basins)`. Morse graph nodes are `frozenset` of box indices. Basins are disjoint.
-- `core.py`: `Model(grid, dynamics).compute_box_map(n_jobs=-1)` -- parallelized box map computation via joblib.
-
-**Supporting modules:**
-- `cache.py`: Persistent caching for box maps, Morse graphs, basins (`save_method_results`, `load_method_results`, `cache_exists`, `clear_cache`).
-- `postprocessing.py`: System-specific simplification of computed Morse graphs (`post_processing_example_1`, `post_processing_example_2`).
-- `learning.py`: GP regression utilities (`GaussianProcessModel`, `train_gp_from_data`).
-- `utils.py`: Trajectory generation (`generate_trajectory_data`), mode encoding conversions (MATLAB/binary), polynomial utilities.
-- `plot.py`, `metrics.py`, `comparison.py` -- visualization (3-panel: Morse sets, Hasse diagram, basins) and quantitative comparison (IoU, graph edit distance).
-
-**Important conventions:**
-- `SwitchingSystem` binary mode encoding: bit `i` corresponds to `sign(p_i) > 0`. Mode 0 means all polynomials negative.
-- `UniformGrid.box_to_indices()` returns a **filled rectangular region** of grid indices (cubical convex closure), not a sparse union.
-- Box map computation samples `2^D` corners + center per box for `F_integration`.
-- Detailed technical reference: `MorseGraph-L4DC/SUMMARY.md`.
+**Key modules:**
+- `cmgdb_pipeline.py`: Domain estimation, tau-map construction, CMGDB model setup, result serialization.
+- `examples_config.py`: 9 example system definitions (oscillator types, coupling, initial conditions).
+- `dynamics.py`: Oscillator vector fields (Stuart-Landau, radial polynomial, subcritical Hopf, Van der Pol, FitzHugh-Nagumo, Selkov, toggle surrogate) and RK4 integration.
+- `run_example.py`: CLI entry point for single Morse graph computation.
+- `run_sweep.py`: Parallel parameter sweep across subdivision configurations.
 
 ## Running examples
 
 ```bash
-cd MorseGraph-L4DC
-python examples/example1.py   # Toggle switch system
-python examples/example2.py   # Piecewise Van der Pol
+# single example
+python scripts/morse_graph/run_example.py --example 1 --box-mode corners
+
+# parameter sweep
+python scripts/morse_graph/run_sweep.py --example 1 --max-workers 4
 ```
 
-Output goes to `MorseGraph-L4DC/examples/example_{1,2}_tau_1_0/`.
+Output goes to `results/morse_graphs/<example_name>/<run_tag>/`.
 
 ## Conventions
 
