@@ -59,8 +59,8 @@ scripts/morse_graph/
     dynamics.py          -- oscillator vector fields and RK4 integration
     README.md            -- detailed script documentation
 
-notebooks/               -- Jupyter notebooks (hybrid system identification + Morse graph validation)
 results/morse_graphs/    -- computed Morse graphs (Hasse diagrams, Morse set projections, metadata)
+references/              -- development notebooks, toy projects (not needed to run the pipeline)
 ```
 
 ## Pipeline overview
