@@ -1,0 +1,12 @@
+.DS_Store
+__pycache__
+.ipynb_checkpoints/
+MORALS.egg-info/
+*logs/
+tmp*/
+examples/test.py
+output/
+models/
+.vscode/
+data/
+dist/
