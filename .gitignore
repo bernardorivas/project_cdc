@@ -21,3 +21,7 @@ Thumbs.db
 
 # AI tool caches
 .serena/
+
+# MORALS generated data and outputs
+MORALS/examples/data/
+MORALS/examples/output/

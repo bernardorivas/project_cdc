@@ -1,0 +1,20 @@
+{
+    'system': 'switched_network',
+    'control': '',
+    'use_limits': False,
+    'high_dims': 6,
+    'low_dims': 2,
+    'step': 1,
+    'subsample': 1,
+    'epochs': 1500,
+    'patience': 50,
+    'batch_size': 1024,
+    'learning_rate': 0.001,
+    'data_dir': 'data/EX06_vanderpol_3nodes/',
+    'model_dir': 'output/EX06_vanderpol_3nodes/models/',
+    'log_dir': 'output/EX06_vanderpol_3nodes/logs/',
+    'output_dir': 'output/EX06_vanderpol_3nodes/',
+    'num_layers': 2,
+    'seed': 0,
+    'experiment': '1x100x1x0x'
+}

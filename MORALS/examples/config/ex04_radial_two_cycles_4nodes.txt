@@ -1,0 +1,20 @@
+{
+    'system': 'switched_network',
+    'control': '',
+    'use_limits': False,
+    'high_dims': 8,
+    'low_dims': 2,
+    'step': 1,
+    'subsample': 1,
+    'epochs': 1500,
+    'patience': 50,
+    'batch_size': 1024,
+    'learning_rate': 0.001,
+    'data_dir': 'data/EX04_radial_two_cycles_4nodes_mixed_basins/',
+    'model_dir': 'output/EX04_radial_two_cycles_4nodes_mixed_basins/models/',
+    'log_dir': 'output/EX04_radial_two_cycles_4nodes_mixed_basins/logs/',
+    'output_dir': 'output/EX04_radial_two_cycles_4nodes_mixed_basins/',
+    'num_layers': 2,
+    'seed': 0,
+    'experiment': '1x100x1x0x'
+}
